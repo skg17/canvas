@@ -83,7 +83,7 @@ function AddMediaModal({ isOpen, onClose, onAdd, onSearch }) {
             </select>
             <button
               type="submit"
-              className="h-[44px] sm:h-[38px] px-4 border border-accent/30 text-accent rounded-lg text-sm font-medium hover:bg-accent/10 hover:border-accent/50 active:bg-accent/15 transition-all touch-manipulation"
+              className="h-[44px] sm:h-[38px] px-4 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg text-sm font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation"
             >
               Search
             </button>
@@ -127,7 +127,7 @@ function AddMediaModal({ isOpen, onClose, onAdd, onSearch }) {
                   )}
                   <button
                     onClick={() => handleAdd(result)}
-                    className="w-full sm:w-auto px-4 py-2.5 border border-accent/30 text-accent rounded-lg text-sm font-medium hover:bg-accent/10 hover:border-accent/50 active:bg-accent/15 transition-all touch-manipulation min-h-[44px]"
+                    className="w-full sm:w-auto px-4 py-2.5 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg text-sm font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation min-h-[44px]"
                   >
                     Add to Watchlist
                   </button>
