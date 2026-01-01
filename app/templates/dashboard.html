@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block content %}
+<nav class="sticky top-0 z-50 bg-bg-secondary border-b border-border">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-6 flex-1 w-full md:w-auto">
+            <h1 class="text-xl font-semibold text-text-primary">
+                canvas
+            </h1>
+            <form method="get" action="/" class="flex-1 max-w-md">
+                <input 
+                    type="text" 
+                    name="search" 
+                    placeholder="Search titles..." 
+                    value="{{ current_filters.search }}" 
+                    onchange="this.form.submit()"
+                    class="w-full px-4 py-2 bg-bg-primary border border-border rounded-lg text-text-primary text-sm placeholder-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all"
+                >
+            </form>
+        </div>
+        <button 
+            onclick="openAddModal()" 
+            class="px-4 py-2 bg-accent text-text-primary rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors w-full md:w-auto"
+        >
+            + Add Media
+        </button>
+    </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="mb-8">
+        <form method="get" action="/" class="flex flex-col md:flex-row gap-6 items-start">
+            <input type="hidden" name="search" value="{{ current_filters.search }}">
+            
+            <div class="flex flex-col gap-2">
+                <label class="text-xs text-text-secondary uppercase tracking-wide font-medium">Media Type</label>
+                <div class="flex gap-2">
+                    <button 
+                        type="submit" 
+                        name="media_type" 
+                        value="all" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.media_type == 'all' or not current_filters.media_type %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        All
+                    </button>
+                    <button 
+                        type="submit" 
+                        name="media_type" 
+                        value="movie" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.media_type == 'movie' %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        Movies
+                    </button>
+                    <button 
+                        type="submit" 
+                        name="media_type" 
+                        value="tv" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.media_type == 'tv' %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        TV Shows
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+                <label class="text-xs text-text-secondary uppercase tracking-wide font-medium">Watch Status</label>
+                <div class="flex gap-2">
+                    <button 
+                        type="submit" 
+                        name="watched" 
+                        value="all" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.watched == 'all' or not current_filters.watched %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        All
+                    </button>
+                    <button 
+                        type="submit" 
+                        name="watched" 
+                        value="unwatched" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.watched == 'unwatched' %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        Unwatched
+                    </button>
+                    <button 
+                        type="submit" 
+                        name="watched" 
+                        value="watched" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.watched == 'watched' %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        Watched
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+                <label class="text-xs text-text-secondary uppercase tracking-wide font-medium">Availability</label>
+                <div class="flex gap-2">
+                    <button 
+                        type="submit" 
+                        name="availability" 
+                        value="all" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.availability == 'all' or not current_filters.availability %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        All
+                    </button>
+                    <button 
+                        type="submit" 
+                        name="availability" 
+                        value="available" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.availability == 'available' %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        Available
+                    </button>
+                    <button 
+                        type="submit" 
+                        name="availability" 
+                        value="missing" 
+                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all {% if current_filters.availability == 'missing' %}bg-accent text-text-primary{% else %}bg-bg-tertiary text-text-primary hover:bg-bg-secondary{% endif %}"
+                    >
+                        Missing
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if items %}
+    <div class="watchlist-grid grid grid-cols-4 gap-6">
+        {% for item in items %}
+        <div class="media-card bg-bg-secondary rounded-lg overflow-hidden border border-border transition-all hover:border-accent/50 hover:shadow-lg">
+            <div class="card-poster relative">
+                {% if item.poster_path %}
+                <img src="{{ item.poster_path }}" alt="{{ item.title }}" onerror="this.src='/static/placeholder.svg'" class="w-full h-full object-cover">
+                {% else %}
+                <img src="/static/placeholder.svg" alt="{{ item.title }}" class="w-full h-full object-cover">
+                {% endif %}
+                <span class="card-type-badge absolute top-2 left-2 bg-black/80 text-text-primary px-2 py-1 rounded text-xs font-medium uppercase backdrop-blur-sm">
+                    {{ item.media_type|upper }}
+                </span>
+                <div class="card-menu absolute top-2 right-2 z-10">
+                    <button class="card-menu-toggle bg-black/80 backdrop-blur-sm text-text-primary border-none rounded w-8 h-8 flex items-center justify-center cursor-pointer text-lg transition-all hover:bg-black/90" onclick="toggleMenu(this)">
+                        <span>☰</span>
+                    </button>
+                    <div class="card-menu-dropdown absolute top-full right-0 mt-1 bg-bg-tertiary rounded-lg shadow-xl min-w-[180px] flex-col overflow-hidden border border-border p-1">
+                        <form method="post" action="/toggle-watched/{{ item.id }}" class="block">
+                            <button type="submit" class="w-full text-left px-3 py-2 text-sm text-text-primary transition-colors hover:bg-bg-secondary rounded">
+                                {% if item.is_watched %}Mark as Unwatched{% else %}Mark as Watched{% endif %}
+                            </button>
+                        </form>
+                        <form method="post" action="/remove/{{ item.id }}" class="block">
+                            <button type="submit" class="w-full text-left px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-400/10 rounded" onclick="return confirm('Remove from watchlist?')">
+                                Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-bg-secondary">
+                <div class="mb-3">
+                    <h3 class="text-base font-semibold text-text-primary mb-1 line-clamp-2">{{ item.title }}</h3>
+                    <span class="text-text-secondary text-sm">{{ item.release_date[:4] if item.release_date else "N/A" }}</span>
+                </div>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% if item.is_available %}
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-accent-soft text-accent border border-accent/50">
+                        ✓ Available
+                    </span>
+                    {% else %}
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-orange-500/20 text-orange-500 border border-orange-500/30">
+                        × Missing
+                    </span>
+                    {% endif %}
+                    {% if item.is_watched %}
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-accent-soft text-accent border border-accent/50">
+                        👁 Watched
+                    </span>
+                    {% else %}
+                    <span class="px-2 py-1 rounded text-xs font-medium bg-bg-tertiary text-text-secondary border border-border">
+                        👁 Unwatched
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    {% if not item.is_available %}
+                    <a href="{{ jellyseerr_base_url }}/{{ item.media_type }}/{{ item.tmdb_id }}" 
+                       target="_blank" 
+                       class="flex-1 min-w-[80px] text-center px-3 py-2 rounded-lg text-sm font-medium no-underline border-none cursor-pointer inline-flex items-center justify-center bg-orange-500 text-white hover:bg-orange-600 transition-colors">
+                        Request
+                    </a>
+                    {% endif %}
+                    {% if item.is_available and item.jellyfin_item_id %}
+                    <a href="{{ jellyfin_base_url }}/web/index.html#!/details?id={{ item.jellyfin_item_id }}" 
+                       target="_blank" 
+                       class="flex-1 min-w-[80px] text-center px-3 py-2 rounded-lg text-sm font-medium no-underline border-none cursor-pointer inline-flex items-center justify-center bg-accent text-text-primary hover:bg-accent-hover transition-colors">
+                        Watch Now
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 px-8 bg-bg-secondary rounded-lg border border-border">
+        <h2 class="text-2xl mb-2 text-text-primary font-semibold">Your watchlist is empty</h2>
+        <p class="text-text-secondary mb-6">Start adding movies and TV shows to track what you want to watch.</p>
+        <button onclick="openAddModal()" class="px-4 py-2 bg-accent text-text-primary border-none rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">
+            Add Media
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Media Modal -->
+<div id="addModal" class="modal fixed z-[1000] left-0 top-0 w-full h-full bg-black/50 overflow-y-auto backdrop-blur-sm">
+    <div class="bg-bg-secondary my-8 mx-auto p-6 rounded-lg max-w-4xl w-[90%] max-h-[90vh] overflow-y-auto border border-border text-text-primary shadow-2xl">
+        <span class="text-text-secondary float-right text-2xl font-medium cursor-pointer w-8 h-8 flex items-center justify-center rounded hover:text-text-primary hover:bg-bg-tertiary transition-all" onclick="closeAddModal()">&times;</span>
+        <h2 class="mb-4 text-xl text-text-primary font-semibold">Add Media</h2>
+        <form id="searchForm" onsubmit="searchMedia(event)">
+            <div class="flex gap-2 mb-4">
+                <input 
+                    type="text" 
+                    id="searchQuery" 
+                    placeholder="Search for movies or TV shows..." 
+                    required
+                    class="flex-1 px-4 py-2 border border-border rounded-lg text-sm bg-bg-primary text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all"
+                >
+                <select 
+                    id="searchType"
+                    class="px-4 py-2 border border-border rounded-lg text-sm bg-bg-primary text-text-primary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 cursor-pointer transition-all"
+                >
+                    <option value="all">All</option>
+                    <option value="movie">Movies</option>
+                    <option value="tv">TV Shows</option>
+                </select>
+                <button 
+                    type="submit" 
+                    class="px-4 py-2 bg-accent text-text-primary border-none rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors"
+                >
+                    Search
+                </button>
+            </div>
+        </form>
+        <div id="searchResults"></div>
+    </div>
+</div>
+
+<script>
+function openAddModal() {
+    document.getElementById('addModal').classList.add('show');
+}
+
+function closeAddModal() {
+    document.getElementById('addModal').classList.remove('show');
+    document.getElementById('searchResults').innerHTML = '';
+    document.getElementById('searchQuery').value = '';
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('addModal');
+    if (event.target == modal) {
+        closeAddModal();
+    }
+}
+
+async function searchMedia(event) {
+    event.preventDefault();
+    const query = document.getElementById('searchQuery').value;
+    const type = document.getElementById('searchType').value;
+    
+    if (!query.trim()) return;
+    
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '<p>Searching...</p>';
+    
+    try {
+        const response = await fetch(`/search?q=${encodeURIComponent(query)}&type=${type}`);
+        const html = await response.text();
+        resultsDiv.innerHTML = html;
+    } catch (error) {
+        resultsDiv.innerHTML = '<p class="text-red-500 text-center p-4">Error searching. Please try again.</p>';
+    }
+}
+
+function toggleMenu(button) {
+    const card = button.closest('.media-card');
+    const menu = card.querySelector('.card-menu');
+    menu.classList.toggle('active');
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.card-menu')) {
+        document.querySelectorAll('.card-menu').forEach(menu => {
+            menu.classList.remove('active');
+        });
+    }
+});
+</script>
+{% endblock %}

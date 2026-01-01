@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  canvas:
+    build: .
+    container_name: canvas
+    ports:
+      - "8000:8000"
+    environment:
+      - JELLYFIN_BASE_URL=${JELLYFIN_BASE_URL}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - JELLYFIN_USERNAME=${JELLYFIN_USERNAME:-}
+      - JELLYSEERR_BASE_URL=${JELLYSEERR_BASE_URL}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - DATABASE_URL=sqlite:////data/watchlist.db
+    volumes:
+      - ./data:/data:rw
+    restart: unless-stopped
+

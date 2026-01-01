@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  canvas:
+    build: .
+    container_name: canvas
+    ports:
+      - "8000:8000"
+    environment:
+      - JELLYFIN_BASE_URL=${JELLYFIN_BASE_URL}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - JELLYFIN_USERNAME=${JELLYFIN_USERNAME:-}
+      - JELLYSEERR_BASE_URL=${JELLYSEERR_BASE_URL}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - DATABASE_URL=sqlite:////data/watchlist.db
+    volumes:
+      - ./data:/data:rw
+      # Mount app directory for hot-reload development
+      - ./app:/app/app
+      # Mount frontend for development (optional - you can run React dev server separately)
+      - ./frontend:/app/frontend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped

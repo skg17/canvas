@@ -1,0 +1,112 @@
+/* Custom styles for React components */
+
+/* Card menu toggle visibility - always visible on mobile */
+.card-menu-toggle {
+  display: none !important;
+}
+
+.media-card:hover .card-menu-toggle {
+  display: flex !important;
+}
+
+@media (max-width: 767px) {
+  .card-menu-toggle {
+    display: flex !important;
+  }
+}
+
+.card-menu-dropdown {
+  display: none !important;
+}
+
+.card-menu.active .card-menu-dropdown {
+  display: flex !important;
+}
+
+.card-poster {
+  aspect-ratio: 2/3;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Shorter poster on mobile */
+@media (max-width: 767px) {
+  .card-poster {
+    aspect-ratio: 16/9;
+    max-height: 200px;
+    width: 100%;
+  }
+  
+  .card-poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.result-poster {
+  aspect-ratio: 2/3;
+}
+
+/* Responsive grid adjustments */
+/* Desktop: 4-6 columns (default 4) */
+@media (min-width: 1600px) {
+  .watchlist-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1599px) {
+  .watchlist-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* Tablet: 3-4 columns */
+@media (min-width: 900px) and (max-width: 1399px) {
+  .watchlist-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Mobile: 2 columns */
+@media (max-width: 899px) {
+  .watchlist-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .watchlist-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+}
+
+/* Soft focus glow */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(100, 73, 105, 0.3);
+}
+
+/* Touch optimization */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent text selection on buttons */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Better scrolling on mobile */
+@media (max-width: 767px) {
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+}
