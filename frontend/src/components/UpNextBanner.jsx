@@ -6,6 +6,7 @@ function UpNextBanner({ config, onQueueUpdate }) {
   const [queueItems, setQueueItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [draggedItem, setDraggedItem] = useState(null)
+  const [dragOverIndex, setDragOverIndex] = useState(null)
 
   const loadQueue = async () => {
     setLoading(true)
@@ -43,24 +44,44 @@ function UpNextBanner({ config, onQueueUpdate }) {
   const handleDragStart = (e, index) => {
     setDraggedItem(index)
     e.dataTransfer.effectAllowed = 'move'
-    // Prevent click event during drag
-    e.currentTarget.style.pointerEvents = 'none'
+    e.dataTransfer.setData('text/html', e.currentTarget.outerHTML)
+    // Make the dragged element semi-transparent
+    e.currentTarget.style.opacity = '0.5'
   }
 
-  const handleDragOver = (e) => {
+  const handleDragEnter = (e, index) => {
+    e.preventDefault()
+    if (draggedItem !== null && draggedItem !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const handleDragOver = (e, index) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    if (draggedItem !== null && draggedItem !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    // Only clear dragOverIndex if we're actually leaving the drop zone
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX
+    const y = e.clientY
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverIndex(null)
+    }
   }
 
   const handleDrop = async (e, dropIndex) => {
     e.preventDefault()
-    // Restore pointer events
-    if (e.currentTarget) {
-      e.currentTarget.style.pointerEvents = 'auto'
-    }
+    e.stopPropagation()
     
     if (draggedItem === null || draggedItem === dropIndex) {
       setDraggedItem(null)
+      setDragOverIndex(null)
       return
     }
 
@@ -83,14 +104,14 @@ function UpNextBanner({ config, onQueueUpdate }) {
     }
 
     setDraggedItem(null)
+    setDragOverIndex(null)
   }
 
   const handleDragEnd = (e) => {
-    // Restore pointer events if drag was cancelled
-    if (e.currentTarget) {
-      e.currentTarget.style.pointerEvents = 'auto'
-    }
+    // Restore opacity
+    e.currentTarget.style.opacity = '1'
     setDraggedItem(null)
+    setDragOverIndex(null)
   }
 
   if (loading) {
@@ -125,7 +146,9 @@ function UpNextBanner({ config, onQueueUpdate }) {
             key={item.id}
             draggable
             onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={handleDragOver}
+            onDragEnter={(e) => handleDragEnter(e, index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, index)}
             onDragEnd={handleDragEnd}
             onClick={(e) => {
@@ -134,7 +157,9 @@ function UpNextBanner({ config, onQueueUpdate }) {
                 handleCardClick(item)
               }
             }}
-            className="flex-shrink-0 w-32 sm:w-40 bg-[#17131D] rounded-lg overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] transition-all cursor-pointer group"
+            className={`flex-shrink-0 w-32 sm:w-40 bg-[#17131D] rounded-lg overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] transition-all cursor-move group ${
+              dragOverIndex === index ? 'ring-2 ring-[#B894D1] ring-opacity-50' : ''
+            } ${draggedItem === index ? 'opacity-50' : ''}`}
           >
             <div className="relative aspect-[2/3]">
               {item.poster_path ? (
