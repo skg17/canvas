@@ -159,6 +159,15 @@ The database is stored in the `data/` directory (mounted as a volume in Docker).
 - Use `docker-compose down` and `docker-compose up` to restart without losing data
 - The database file is located at `./data/watchlist.db` on your host machine
 
+## Deployment
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+Quick deployment options:
+- **Build and transfer**: Build image locally, save to tar file, transfer to server
+- **Git clone**: Clone repo on server and build there
+- **Docker registry**: Push to registry and pull on server
+
 ## License
 
 MIT

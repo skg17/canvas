@@ -11,9 +11,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (if needed in the future)
+# Currently no system packages required, but keeping structure for future use
+RUN apt-get update && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
 COPY requirements.txt .
