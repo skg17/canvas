@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     app_title: str = "canvas"
     debug: bool = False
     
+    # Reverse Proxy
+    allowed_origin: Optional[str] = None  # Optional: specify the proxied URL (e.g., https://canvas.example.com)
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

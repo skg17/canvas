@@ -61,10 +61,18 @@ app.add_middleware(
 )
 
 # CORS middleware for React frontend
-# In production, allow all origins since we don't know the server IP
+# Use configured origin if provided, otherwise allow all (for development)
+allowed_origins = ["*"]  # Default: allow all
+if settings.allowed_origin:
+    # Use the configured proxied URL as the allowed origin
+    allowed_origins = [settings.allowed_origin]
+    print(f"Configured CORS to allow origin: {settings.allowed_origin}")
+else:
+    print("CORS configured to allow all origins (no ALLOWED_ORIGIN set)")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins in production
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,9 +80,15 @@ app.add_middleware(
 
 # Serve static files (for built React app in production)
 # IMPORTANT: Mount static files BEFORE the catch-all route
+# Mount must happen before route definitions to take precedence
 import os
+
+# Mount assets directory - this MUST be before the catch-all route
 if os.path.exists("frontend/dist/assets"):
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+    print("Mounted /assets static files directory")
+else:
+    print("Warning: frontend/dist/assets directory not found")
 
 # Serve other static files from dist root (like vite.svg, favicon, etc.)
 # These will be handled by the catch-all route
@@ -341,6 +355,7 @@ async def get_config():
 
 # Serve React app for all non-API routes (for production)
 # This must be LAST to catch all remaining routes
+# Note: /assets/* requests should be handled by the mount above, but if they reach here, return 404
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str, request: Request):
     """Serve React app for all non-API routes."""
@@ -349,8 +364,10 @@ async def serve_react_app(full_path: str, request: Request):
         raise HTTPException(status_code=404)
     
     # Don't serve assets here - they're handled by the /assets mount above
+    # If we reach here for an asset request, the mount failed, so return 404
     if full_path.startswith("assets"):
-        raise HTTPException(status_code=404)
+        print(f"Warning: Asset request '{full_path}' reached catch-all route - mount may have failed")
+        raise HTTPException(status_code=404, detail="Asset not found")
     
     # Normalize path (remove leading slash if present)
     path = full_path.lstrip("/")

@@ -88,6 +88,7 @@ JELLYFIN_API_KEY=your_jellyfin_api_key_here
 JELLYFIN_USERNAME=sahil  # Optional: specify which user to check watched status for
 JELLYSEERR_BASE_URL=http://jellyseerr:5055
 TMDB_API_KEY=your_tmdb_api_key_here
+ALLOWED_ORIGIN=https://canvas.example.com  # Optional: specify your proxied URL for CORS
 ```
 
 ### Getting API Keys

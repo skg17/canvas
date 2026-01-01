@@ -4,7 +4,17 @@
 
 When using Nginx Proxy Manager (or any reverse proxy), you need to configure it correctly to avoid white page issues.
 
-### Quick Setup (Recommended)
+### Step 1: Configure the App
+
+**Add to your `.env` file:**
+```env
+ALLOWED_ORIGIN=https://canvas.example.com
+```
+Replace `https://canvas.example.com` with your actual proxied URL (include the protocol: `http://` or `https://`).
+
+This tells the app to accept connections from your proxied URL.
+
+### Step 2: Configure Nginx Proxy Manager
 
 1. **In Nginx Proxy Manager:**
    - **Domain Names**: Your domain (e.g., `canvas.example.com`)
@@ -16,19 +26,20 @@ When using Nginx Proxy Manager (or any reverse proxy), you need to configure it 
    - **Websockets Support**: Enabled
    - **Access List**: Configure as needed
 
-2. **That's it!** The default configuration should work. The app is designed to work behind a reverse proxy.
+2. **Restart the canvas container** after adding `ALLOWED_ORIGIN` to your `.env` file.
 
-### If You Still See a White Page
+### Step 3: Custom Nginx Configuration (If Needed)
 
-If the default configuration doesn't work, add custom Nginx configuration:
+If you still see a white page, add custom Nginx configuration:
 
 1. Go to **Advanced** tab in Nginx Proxy Manager
 2. Add this to **Custom Nginx Configuration**:
 
    ```nginx
-   # Ensure all requests are proxied correctly
+   # CRITICAL: Proxy all requests without rewriting paths
+   # The trailing slash in proxy_pass is important - it preserves the original path
    location / {
-       proxy_pass http://127.0.0.1:8000;
+       proxy_pass http://127.0.0.1:8000/;
        proxy_http_version 1.1;
        
        # Headers for proper proxy support
@@ -47,8 +58,15 @@ If the default configuration doesn't work, add custom Nginx configuration:
        proxy_connect_timeout 60s;
        proxy_send_timeout 60s;
        proxy_read_timeout 60s;
+       
+       # Don't buffer responses (important for streaming)
+       proxy_buffering off;
    }
    ```
+
+**IMPORTANT**: 
+- The trailing slash in `proxy_pass http://127.0.0.1:8000/;` ensures paths are preserved correctly
+- Make sure `ALLOWED_ORIGIN` in your `.env` matches your proxied URL exactly (including protocol)
 
 ### Important Notes
 
@@ -85,6 +103,14 @@ If the default configuration doesn't work, add custom Nginx configuration:
 - **Cause**: Assets not being served correctly
 - **Solution**: Make sure proxy forwards all requests to port 8000, not just `/api`
 
+**Issue**: "Failed to load module script: Expected a JavaScript module but server responded with MIME type 'text/html'"
+- **Cause**: Asset requests are returning `index.html` instead of the JS file. This means the proxy is rewriting paths or the static file mount isn't working.
+- **Solution**: 
+  1. **CRITICAL**: In Nginx Proxy Manager, make sure `proxy_pass` has a trailing slash: `http://127.0.0.1:8000/;` (not `http://127.0.0.1:8000;`)
+  2. Add the custom Nginx configuration above
+  3. Clear browser cache completely
+  4. Check that `/assets/*` requests are being forwarded correctly (check proxy logs)
+
 **Issue**: White page, console shows CORS errors
 - **Cause**: Proxy not forwarding headers correctly
 - **Solution**: Add the custom Nginx configuration above
@@ -95,11 +121,12 @@ If the default configuration doesn't work, add custom Nginx configuration:
   1. Verify Forward Port is `8000`
   2. Verify Forward Scheme is `http` (not `https` unless using SSL termination)
   3. Enable Websockets Support
-  4. Add custom Nginx config if needed
+  4. **Most Important**: Use `proxy_pass http://127.0.0.1:8000/;` with trailing slash in custom config
+  5. Disable "Cache Assets" or clear cache
 
 **Issue**: API calls return 404
 - **Cause**: Proxy might be rewriting paths
-- **Solution**: Make sure proxy doesn't rewrite `/api` paths. Use `proxy_pass http://127.0.0.1:8000;` without trailing slash
+- **Solution**: Make sure proxy doesn't rewrite paths. Use `proxy_pass http://127.0.0.1:8000/;` with trailing slash
 
 ### Testing
 
