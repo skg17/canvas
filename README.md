@@ -140,7 +140,7 @@ For example:
 - Movies: `http://jellyseerr:5055/movie/12345`
 - TV Shows: `http://jellyseerr:5055/tv/67890`
 
-If your Jellyseerr uses a different URL structure, you may need to adjust the template in `app/templates/dashboard.html`.
+If your Jellyseerr uses a different URL structure, you may need to adjust the URL format in the React components.
 
 ## Architecture
 
