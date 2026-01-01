@@ -1,13 +1,15 @@
 """Main FastAPI application."""
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel
 import asyncio
 import httpx
+import os
 from contextlib import asynccontextmanager
 
 from app.config import settings
@@ -48,7 +50,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_title,
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path=""  # Set to empty string - let reverse proxy handle paths
+)
+
+# Trust proxy headers (for reverse proxy)
+# This allows the app to work correctly behind nginx/traefik/etc
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["*"]  # Allow all hosts when behind reverse proxy
 )
 
 # CORS middleware for React frontend
@@ -340,24 +350,25 @@ async def get_config():
 
 # Serve React app for all non-API routes (for production)
 @app.get("/{full_path:path}")
-async def serve_react_app(full_path: str):
+async def serve_react_app(full_path: str, request: Request):
     """Serve React app for all non-API routes."""
-    from fastapi.responses import FileResponse
-    import os
-    
     # Block API routes
     if full_path.startswith("api"):
         raise HTTPException(status_code=404)
     
+    # Normalize path (remove leading slash if present)
+    path = full_path.lstrip("/")
+    
     # Serve static assets if they exist
-    dist_path = f"frontend/dist/{full_path}"
-    if os.path.exists(dist_path) and os.path.isfile(dist_path):
-        return FileResponse(dist_path)
+    if path:
+        dist_path = os.path.join("frontend/dist", path)
+        if os.path.exists(dist_path) and os.path.isfile(dist_path):
+            return FileResponse(dist_path)
     
     # For all other routes (including root), serve index.html (SPA routing)
     react_index = "frontend/dist/index.html"
     if os.path.exists(react_index):
-        return FileResponse(react_index)
+        return FileResponse(react_index, media_type="text/html")
     
     # Fallback for development
     return {"message": "React app not built. Run 'npm run build' in the frontend directory."}
