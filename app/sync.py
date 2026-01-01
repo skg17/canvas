@@ -21,12 +21,15 @@ async def sync_jellyfin_status():
                 if jellyfin_item:
                     item.is_available = True
                     item.jellyfin_item_id = jellyfin_item.get("Id")
-                    # Check watched status
-                    is_watched = await jellyfin.is_watched(item.tmdb_id, item.media_type, title=item.title)
-                    item.is_watched = is_watched
+                    # Only update watched status if it wasn't manually set by the user
+                    if not item.watched_manually_set:
+                        is_watched = await jellyfin.is_watched(item.tmdb_id, item.media_type, title=item.title)
+                        item.is_watched = is_watched
                 else:
                     item.is_available = False
-                    item.is_watched = False
+                    # Only update watched status if it wasn't manually set by the user
+                    if not item.watched_manually_set:
+                        item.is_watched = False
                     item.jellyfin_item_id = None
                 
             except Exception as e:

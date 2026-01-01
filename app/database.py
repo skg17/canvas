@@ -64,5 +64,25 @@ def init_db():
     # Use create_all with checkfirst=True to avoid recreating existing tables
     # This ensures we never drop existing data
     Base.metadata.create_all(bind=engine, checkfirst=True)
+    
+    # Add new column if it doesn't exist (for existing databases)
+    if database_url.startswith("sqlite:///"):
+        try:
+            import sqlite3
+            db_path = database_url.replace("sqlite:///", "")
+            if os.path.exists(db_path):
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                # Check if column exists
+                cursor.execute("PRAGMA table_info(watchlist_items)")
+                columns = [column[1] for column in cursor.fetchall()]
+                if 'watched_manually_set' not in columns:
+                    cursor.execute("ALTER TABLE watchlist_items ADD COLUMN watched_manually_set BOOLEAN DEFAULT 0")
+                    conn.commit()
+                    print("Added 'watched_manually_set' column to existing database")
+                conn.close()
+        except Exception as e:
+            print(f"Warning: Could not add new column to database: {e}")
+    
     print("Database tables initialized (existing tables preserved)")
 

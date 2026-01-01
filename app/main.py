@@ -338,6 +338,7 @@ async def toggle_watched_status(
         raise HTTPException(status_code=404, detail="Item not found")
     
     item.is_watched = not item.is_watched
+    item.watched_manually_set = True  # Mark as manually set
     db.commit()
     db.refresh(item)
     
