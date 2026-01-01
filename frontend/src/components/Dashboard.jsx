@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { HiMagnifyingGlass } from 'react-icons/hi2'
 import { getWatchlist, searchMedia, addToWatchlist, removeFromWatchlist, toggleWatched, addToQueue, getConfig } from '../api/watchlist'
 import MediaCard from './MediaCard'
 import FilterBar from './FilterBar'
 import AddMediaModal from './AddMediaModal'
+import RandomSelectModal from './RandomSelectModal'
 import Navbar from './Navbar'
 import UpNextBanner from './UpNextBanner'
 
@@ -19,7 +20,11 @@ function Dashboard() {
   })
   const [showModal, setShowModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [showRandomModal, setShowRandomModal] = useState(false)
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0)
+  const [selectedRandomItem, setSelectedRandomItem] = useState(null)
+  const [randomSelectedItem, setRandomSelectedItem] = useState(null)
+  const randomItemRef = useRef(null)
 
   useEffect(() => {
     // Load config on mount
@@ -57,6 +62,55 @@ function Dashboard() {
     } catch (error) {
       console.error('Error adding item:', error)
       alert(error.response?.data?.detail || 'Error adding item to watchlist')
+    }
+  }
+
+  const handleRandomSelect = async (options) => {
+    try {
+      // Build filters for random selection
+      const filters = {
+        media_type: options.media_type === 'all' ? undefined : options.media_type,
+        watched: options.include_watched ? undefined : 'unwatched',
+        availability: undefined,
+        search: undefined
+      }
+      
+      // Get all items matching the criteria
+      const data = await getWatchlist(filters)
+      const matchingItems = data.items || []
+      
+      if (matchingItems.length === 0) {
+        alert('No items found matching your criteria.')
+        return
+      }
+      
+      // Select a random item
+      const randomIndex = Math.floor(Math.random() * matchingItems.length)
+      const randomItem = matchingItems[randomIndex]
+      
+      // Set the selected item for the modal
+      setRandomSelectedItem(randomItem)
+      setSelectedRandomItem(randomItem.id)
+      
+      // Scroll to the item after a brief delay to allow DOM update
+      setTimeout(() => {
+        if (randomItemRef.current) {
+          randomItemRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          })
+          // Highlight the item briefly
+          randomItemRef.current.classList.add('ring-2', 'ring-accent', 'ring-opacity-75')
+          setTimeout(() => {
+            if (randomItemRef.current) {
+              randomItemRef.current.classList.remove('ring-2', 'ring-accent', 'ring-opacity-75')
+            }
+          }, 2000)
+        }
+      }, 100)
+    } catch (error) {
+      console.error('Error selecting random item:', error)
+      alert('Error selecting random item. Please try again.')
     }
   }
 
@@ -101,6 +155,7 @@ function Dashboard() {
       <Navbar 
         onAddClick={() => setShowModal(true)}
         onFilterClick={() => setShowFilters(!showFilters)}
+        onRandomClick={() => setShowRandomModal(true)}
       />
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
         {showFilters && (
@@ -153,14 +208,18 @@ function Dashboard() {
             </div>
             <div className="watchlist-grid grid grid-cols-4 gap-4 sm:gap-6">
               {items.map(item => (
-                <MediaCard
+                <div
                   key={item.id}
-                  item={item}
-                  config={config}
-                  onRemove={handleRemoveItem}
-                  onToggleWatched={handleToggleWatched}
-                  onAddToQueue={handleAddToQueue}
-                />
+                  ref={selectedRandomItem === item.id ? randomItemRef : null}
+                >
+                  <MediaCard
+                    item={item}
+                    config={config}
+                    onRemove={handleRemoveItem}
+                    onToggleWatched={handleToggleWatched}
+                    onAddToQueue={handleAddToQueue}
+                  />
+                </div>
               ))}
             </div>
           </>
@@ -183,6 +242,17 @@ function Dashboard() {
         onClose={() => setShowModal(false)}
         onAdd={handleAddItem}
         onSearch={searchMedia}
+      />
+
+      <RandomSelectModal
+        isOpen={showRandomModal}
+        onClose={() => {
+          setShowRandomModal(false)
+          setRandomSelectedItem(null)
+        }}
+        onSelect={handleRandomSelect}
+        selectedItem={randomSelectedItem}
+        onAddToQueue={handleAddToQueue}
       />
     </>
   )
