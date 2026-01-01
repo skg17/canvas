@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { HiEye, HiEyeSlash, HiCheck, HiXMark, HiPlay, HiArrowDownTray, HiEllipsisHorizontal, HiFilm, HiTv } from 'react-icons/hi2'
 
-function MediaCard({ item, config, onRemove, onToggleWatched }) {
+function MediaCard({ item, config, onRemove, onToggleWatched, onAddToQueue }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -64,6 +64,18 @@ function MediaCard({ item, config, onRemove, onToggleWatched }) {
             <HiEllipsisHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <div className="card-menu-dropdown absolute top-full right-0 mt-2 bg-[#1F1A27] rounded-lg shadow-xl min-w-[180px] flex-col overflow-hidden border border-white/5 p-1 z-20">
+            {item.queue_order === null && onAddToQueue && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onAddToQueue(item.id)
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2.5 sm:py-2 text-sm text-text-primary transition-colors hover:bg-[#17131D] active:bg-[#17131D] rounded touch-manipulation"
+              >
+                Add to Queue
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation()

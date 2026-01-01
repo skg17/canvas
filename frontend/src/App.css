@@ -102,3 +102,13 @@ button, a {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Hide scrollbar for queue banner */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

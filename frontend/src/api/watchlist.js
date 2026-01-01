@@ -43,3 +43,23 @@ export const toggleWatched = async (itemId) => {
   return response.data
 }
 
+export const addToQueue = async (itemId) => {
+  const response = await api.post(`/watchlist/${itemId}/add-to-queue`)
+  return response.data
+}
+
+export const removeFromQueue = async (itemId) => {
+  const response = await api.post(`/watchlist/${itemId}/remove-from-queue`)
+  return response.data
+}
+
+export const reorderQueue = async (itemOrders) => {
+  const response = await api.post('/watchlist/reorder-queue', { item_orders: itemOrders })
+  return response.data
+}
+
+export const getQueue = async () => {
+  const response = await api.get('/watchlist/queue')
+  return response.data
+}
+

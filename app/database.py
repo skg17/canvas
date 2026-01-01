@@ -80,6 +80,10 @@ def init_db():
                     cursor.execute("ALTER TABLE watchlist_items ADD COLUMN watched_manually_set BOOLEAN DEFAULT 0")
                     conn.commit()
                     print("Added 'watched_manually_set' column to existing database")
+                if 'queue_order' not in columns:
+                    cursor.execute("ALTER TABLE watchlist_items ADD COLUMN queue_order INTEGER")
+                    conn.commit()
+                    print("Added 'queue_order' column to existing database")
                 conn.close()
         except Exception as e:
             print(f"Warning: Could not add new column to database: {e}")

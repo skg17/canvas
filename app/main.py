@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import Optional
 from pydantic import BaseModel
 import asyncio
@@ -105,6 +106,7 @@ class WatchlistItemResponse(BaseModel):
     release_date: Optional[str]
     is_available: bool
     is_watched: bool
+    queue_order: Optional[int] = None
     jellyfin_item_id: Optional[str]
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -139,6 +141,10 @@ class AddItemRequest(BaseModel):
     poster_path: Optional[str] = None
     overview: Optional[str] = None
     release_date: Optional[str] = None
+
+
+class ReorderQueueRequest(BaseModel):
+    item_orders: dict  # {item_id: new_order} - using dict to handle JSON properly
 
 
 class SearchResult(BaseModel):
@@ -351,6 +357,92 @@ async def get_config():
     return {
         "jellyseerr_base_url": settings.jellyseerr_base_url,
         "jellyfin_base_url": settings.jellyfin_base_url.rstrip("/")
+    }
+
+
+@app.post("/api/watchlist/{item_id}/add-to-queue")
+async def add_to_queue(
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+    """Add item to queue."""
+    item = db.query(WatchlistItem).filter(WatchlistItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # If already in queue, do nothing
+    if item.queue_order is not None:
+        return WatchlistItemResponse.from_orm_item(item).model_dump()
+    
+    # Get the highest queue order
+    max_order = db.query(func.max(WatchlistItem.queue_order)).scalar()
+    item.queue_order = (max_order or 0) + 1
+    db.commit()
+    db.refresh(item)
+    
+    return WatchlistItemResponse.from_orm_item(item).model_dump()
+
+
+@app.post("/api/watchlist/{item_id}/remove-from-queue")
+async def remove_from_queue(
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+    """Remove item from queue."""
+    item = db.query(WatchlistItem).filter(WatchlistItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    if item.queue_order is None:
+        return WatchlistItemResponse.from_orm_item(item).model_dump()
+    
+    old_order = item.queue_order
+    item.queue_order = None
+    db.commit()
+    
+    # Reorder remaining items
+    items_to_reorder = db.query(WatchlistItem).filter(
+        WatchlistItem.queue_order > old_order
+    ).all()
+    for item_to_reorder in items_to_reorder:
+        item_to_reorder.queue_order -= 1
+    db.commit()
+    
+    db.refresh(item)
+    return WatchlistItemResponse.from_orm_item(item).model_dump()
+
+
+@app.post("/api/watchlist/reorder-queue")
+async def reorder_queue(
+    request: ReorderQueueRequest,
+    db: Session = Depends(get_db)
+):
+    """Reorder queue items."""
+    try:
+        for item_id, new_order in request.item_orders.items():
+            item = db.query(WatchlistItem).filter(WatchlistItem.id == item_id).first()
+            if item:
+                item.queue_order = new_order
+        
+        db.commit()
+        return {"message": "Queue reordered successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error reordering queue: {str(e)}")
+
+
+@app.get("/api/watchlist/queue")
+async def get_queue(
+    db: Session = Depends(get_db)
+):
+    """Get all items in queue, ordered by queue_order."""
+    items = db.query(WatchlistItem).filter(
+        WatchlistItem.queue_order.isnot(None)
+    ).order_by(WatchlistItem.queue_order.asc()).all()
+    
+    return {
+        "items": [WatchlistItemResponse.from_orm_item(item).model_dump() for item in items],
+        "count": len(items)
     }
 
 

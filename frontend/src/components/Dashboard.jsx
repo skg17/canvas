@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { getWatchlist, searchMedia, addToWatchlist, removeFromWatchlist, toggleWatched, getConfig } from '../api/watchlist'
+import { getWatchlist, searchMedia, addToWatchlist, removeFromWatchlist, toggleWatched, addToQueue, getConfig } from '../api/watchlist'
 import MediaCard from './MediaCard'
 import FilterBar from './FilterBar'
 import AddMediaModal from './AddMediaModal'
 import Navbar from './Navbar'
+import UpNextBanner from './UpNextBanner'
 
 function Dashboard() {
   const [items, setItems] = useState([])
@@ -16,6 +17,7 @@ function Dashboard() {
     search: ''
   })
   const [showModal, setShowModal] = useState(false)
+  const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0)
 
   useEffect(() => {
     // Load config on mount
@@ -75,6 +77,19 @@ function Dashboard() {
     }
   }
 
+  const handleAddToQueue = async (itemId) => {
+    try {
+      console.log('Adding item to queue:', itemId)
+      const result = await addToQueue(itemId)
+      console.log('Item added to queue:', result)
+      await loadWatchlist()
+      setQueueUpdateTrigger(prev => prev + 1)
+    } catch (error) {
+      console.error('Error adding to queue:', error)
+      alert(error.response?.data?.detail || 'Error adding item to queue')
+    }
+  }
+
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }))
   }
@@ -92,12 +107,22 @@ function Dashboard() {
           onSearchChange={(search) => handleFilterChange({ search })}
         />
         
+        {config && Object.keys(config).length > 0 && (
+          <UpNextBanner 
+            config={config}
+            onQueueUpdate={queueUpdateTrigger}
+          />
+        )}
+        
         {loading ? (
           <div className="text-center py-16">
             <p className="text-text-secondary">Loading...</p>
           </div>
         ) : items.length > 0 ? (
           <>
+            <div className="mb-3 sm:mb-4">
+              <h2 className="text-lg sm:text-xl font-medium text-text-primary">Watchlist</h2>
+            </div>
             <div className="mb-4 sm:mb-6">
               <p className="text-text-secondary text-xs sm:text-sm">
                 {items.length} {items.length === 1 ? 'item' : 'items'}
@@ -111,6 +136,7 @@ function Dashboard() {
                   config={config}
                   onRemove={handleRemoveItem}
                   onToggleWatched={handleToggleWatched}
+                  onAddToQueue={handleAddToQueue}
                 />
               ))}
             </div>
