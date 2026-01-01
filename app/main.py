@@ -52,16 +52,31 @@ app = FastAPI(
 )
 
 # CORS middleware for React frontend
+# In production, allow all origins since we don't know the server IP
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8000"],
+    allow_origins=["*"],  # Allow all origins in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Serve static files (for built React app in production)
-app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
+# Vite builds assets to /assets/, so mount the assets directory
+try:
+    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+except Exception:
+    pass  # Directory might not exist in dev mode
+
+# Serve other static files from dist root (like vite.svg, favicon, etc.)
+try:
+    # Mount individual files that might be in dist root
+    import os
+    if os.path.exists("frontend/dist"):
+        # We'll serve these via the catch-all route instead
+        pass
+except Exception:
+    pass
 
 
 # Pydantic models for request/response
@@ -327,13 +342,19 @@ async def get_config():
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
     """Serve React app for all non-API routes."""
-    if full_path.startswith("api") or full_path.startswith("static"):
-        raise HTTPException(status_code=404)
-    
     from fastapi.responses import FileResponse
     import os
     
-    # In production, serve the built React app
+    # Block API routes
+    if full_path.startswith("api"):
+        raise HTTPException(status_code=404)
+    
+    # Serve static assets if they exist
+    dist_path = f"frontend/dist/{full_path}"
+    if os.path.exists(dist_path) and os.path.isfile(dist_path):
+        return FileResponse(dist_path)
+    
+    # For all other routes (including root), serve index.html (SPA routing)
     react_index = "frontend/dist/index.html"
     if os.path.exists(react_index):
         return FileResponse(react_index)
