@@ -24,6 +24,7 @@ function Dashboard() {
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0)
   const [selectedRandomItem, setSelectedRandomItem] = useState(null)
   const [randomSelectedItem, setRandomSelectedItem] = useState(null)
+  const [randomSelectableItems, setRandomSelectableItems] = useState([])
   const randomItemRef = useRef(null)
 
   useEffect(() => {
@@ -70,8 +71,8 @@ function Dashboard() {
       // Build filters for random selection
       const filters = {
         media_type: options.media_type === 'all' ? undefined : options.media_type,
-        watched: options.include_watched ? undefined : 'unwatched',
-        availability: undefined,
+        watched: options.watched === 'all' ? undefined : options.watched,
+        availability: options.availability === 'all' ? undefined : options.availability,
         search: undefined
       }
       
@@ -84,30 +85,35 @@ function Dashboard() {
         return
       }
       
-      // Select a random item
-      const randomIndex = Math.floor(Math.random() * matchingItems.length)
-      const randomItem = matchingItems[randomIndex]
+      // Set the items for animation immediately so animation can start
+      setRandomSelectableItems(matchingItems)
       
-      // Set the selected item for the modal
-      setRandomSelectedItem(randomItem)
-      setSelectedRandomItem(randomItem.id)
-      
-      // Scroll to the item after a brief delay to allow DOM update
+      // Wait a bit for animation to play, then select a random item
       setTimeout(() => {
-        if (randomItemRef.current) {
-          randomItemRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          })
-          // Highlight the item briefly
-          randomItemRef.current.classList.add('ring-2', 'ring-accent', 'ring-opacity-75')
-          setTimeout(() => {
-            if (randomItemRef.current) {
-              randomItemRef.current.classList.remove('ring-2', 'ring-accent', 'ring-opacity-75')
-            }
-          }, 2000)
-        }
-      }, 100)
+        const randomIndex = Math.floor(Math.random() * matchingItems.length)
+        const randomItem = matchingItems[randomIndex]
+        
+        // Set the selected item for the modal
+        setRandomSelectedItem(randomItem)
+        setSelectedRandomItem(randomItem.id)
+        
+        // Scroll to the item after a brief delay to allow DOM update
+        setTimeout(() => {
+          if (randomItemRef.current) {
+            randomItemRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            })
+            // Highlight the item briefly
+            randomItemRef.current.classList.add('ring-2', 'ring-accent', 'ring-opacity-75')
+            setTimeout(() => {
+              if (randomItemRef.current) {
+                randomItemRef.current.classList.remove('ring-2', 'ring-accent', 'ring-opacity-75')
+              }
+            }, 2000)
+          }
+        }, 100)
+      }, 1500) // Let animation play for 1.5 seconds
     } catch (error) {
       console.error('Error selecting random item:', error)
       alert('Error selecting random item. Please try again.')
@@ -249,10 +255,12 @@ function Dashboard() {
         onClose={() => {
           setShowRandomModal(false)
           setRandomSelectedItem(null)
+          setRandomSelectableItems([])
         }}
         onSelect={handleRandomSelect}
         selectedItem={randomSelectedItem}
         onAddToQueue={handleAddToQueue}
+        allItems={randomSelectableItems}
       />
     </>
   )

@@ -1,34 +1,82 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { HiXMark } from 'react-icons/hi2'
 import { FaDice } from 'react-icons/fa'
 
-function RandomSelectModal({ isOpen, onClose, onSelect, selectedItem, onAddToQueue }) {
+function RandomSelectModal({ isOpen, onClose, onSelect, selectedItem, onAddToQueue, allItems }) {
   const [mediaType, setMediaType] = useState('all')
-  const [includeWatched, setIncludeWatched] = useState(true)
+  const [watched, setWatched] = useState('all')
+  const [availability, setAvailability] = useState('all')
   const [isSelecting, setIsSelecting] = useState(false)
   const [showResult, setShowResult] = useState(false)
+  const [animationItem, setAnimationItem] = useState(null)
+  const animationIntervalRef = useRef(null)
 
   useEffect(() => {
     if (selectedItem) {
+      // Stop animation and show result
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current)
+        animationIntervalRef.current = null
+      }
       setIsSelecting(false)
       setShowResult(true)
+      setAnimationItem(null)
     }
   }, [selectedItem])
+
+  useEffect(() => {
+    // Start animation when we're selecting and have items
+    if (isSelecting && allItems && allItems.length > 0) {
+      // Clear any existing interval first
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current)
+      }
+      // Start new animation
+      const interval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * allItems.length)
+        setAnimationItem(allItems[randomIndex])
+      }, 100) // Change poster every 100ms
+      
+      animationIntervalRef.current = interval
+    }
+    
+    // Cleanup interval on unmount or when isSelecting becomes false
+    return () => {
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current)
+        animationIntervalRef.current = null
+      }
+    }
+  }, [allItems, isSelecting])
 
   useEffect(() => {
     if (!isOpen) {
       // Reset state when modal closes
       setIsSelecting(false)
       setShowResult(false)
+      setAnimationItem(null)
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current)
+        animationIntervalRef.current = null
+      }
     }
   }, [isOpen])
 
   const handleRandomSelect = () => {
     setIsSelecting(true)
     setShowResult(false)
+    setAnimationItem(null)
+    
+    // Clear any existing animation
+    if (animationIntervalRef.current) {
+      clearInterval(animationIntervalRef.current)
+      animationIntervalRef.current = null
+    }
+    
     onSelect({
       media_type: mediaType,
-      include_watched: includeWatched
+      watched: watched,
+      availability: availability
     })
   }
 
@@ -39,6 +87,11 @@ function RandomSelectModal({ isOpen, onClose, onSelect, selectedItem, onAddToQue
   const handleClose = () => {
     setShowResult(false)
     setIsSelecting(false)
+    setAnimationItem(null)
+    if (animationIntervalRef.current) {
+      clearInterval(animationIntervalRef.current)
+      animationIntervalRef.current = null
+    }
     onClose()
   }
 
@@ -61,10 +114,45 @@ function RandomSelectModal({ isOpen, onClose, onSelect, selectedItem, onAddToQue
 
           {isSelecting && !showResult ? (
             <div className="flex flex-col items-center justify-center py-8 sm:py-12">
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6">
-                <FaDice className="w-full h-full text-accent animate-spin" />
-              </div>
-              <p className="text-text-secondary text-sm sm:text-base">Selecting random title...</p>
+              {animationItem ? (
+                <>
+                  <div className="flex justify-center mb-4 sm:mb-6">
+                    <div className="w-32 sm:w-40 aspect-[2/3] rounded-lg overflow-hidden shadow-lg transition-opacity duration-75">
+                      {animationItem.poster_path ? (
+                        <img
+                          src={animationItem.poster_path}
+                          alt={animationItem.title}
+                          onError={(e) => {
+                            e.target.src = '/placeholder.svg'
+                          }}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src="/placeholder.svg"
+                          alt={animationItem.title}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-medium text-text-primary mb-1 sm:mb-2">
+                    {animationItem.title}
+                  </h3>
+                  {animationItem.release_date && (
+                    <p className="text-text-secondary text-sm sm:text-base">
+                      {animationItem.release_date.substring(0, 4)}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6">
+                    <FaDice className="w-full h-full text-accent animate-spin" />
+                  </div>
+                  <p className="text-text-secondary text-sm sm:text-base">Selecting random title...</p>
+                </>
+              )}
             </div>
           ) : showResult && selectedItem ? (
             <div className="space-y-4 sm:space-y-6">
@@ -149,17 +237,55 @@ function RandomSelectModal({ isOpen, onClose, onSelect, selectedItem, onAddToQue
               </div>
 
               <div>
-                <label className="flex items-center gap-2 sm:gap-3 cursor-pointer touch-manipulation">
-                  <input
-                    type="checkbox"
-                    checked={includeWatched}
-                    onChange={(e) => setIncludeWatched(e.target.checked)}
-                    className="w-4 h-4 sm:w-5 sm:h-5 rounded border-white/20 bg-[#1C1824] text-accent focus:ring-2 focus:ring-accent/30 focus:ring-offset-0 focus:ring-offset-transparent cursor-pointer"
-                  />
-                  <span className="text-sm sm:text-base text-text-primary">
-                    Include watched titles
-                  </span>
+                <label className="block text-sm font-medium text-text-primary mb-2 sm:mb-3">
+                  Watch Status
                 </label>
+                <div className="flex bg-[#1C1824] rounded-lg p-1 gap-1">
+                  {[
+                    { value: 'all', label: 'All' },
+                    { value: 'unwatched', label: 'Unwatched' },
+                    { value: 'watched', label: 'Watched' }
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setWatched(value)}
+                      className={`flex-1 h-9 sm:h-10 px-3 sm:px-4 rounded-md text-sm font-medium transition-all touch-manipulation ${
+                        watched === value
+                          ? 'bg-accent text-white'
+                          : 'text-text-secondary hover:text-text-primary active:text-text-primary'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2 sm:mb-3">
+                  Availability
+                </label>
+                <div className="flex bg-[#1C1824] rounded-lg p-1 gap-1">
+                  {[
+                    { value: 'all', label: 'All' },
+                    { value: 'available', label: 'Available' },
+                    { value: 'missing', label: 'Missing' }
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setAvailability(value)}
+                      className={`flex-1 h-9 sm:h-10 px-3 sm:px-4 rounded-md text-sm font-medium transition-all touch-manipulation ${
+                        availability === value
+                          ? 'bg-accent text-white'
+                          : 'text-text-secondary hover:text-text-primary active:text-text-primary'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex gap-2 sm:gap-3 pt-2">
