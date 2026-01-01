@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # App
     app_title: str = "canvas"
     debug: bool = False
+    login_password: str  # Password for login authentication
     
     # Reverse Proxy
     allowed_origin: Optional[str] = None  # Optional: specify the proxied URL (e.g., https://canvas.example.com)

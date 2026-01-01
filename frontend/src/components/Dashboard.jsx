@@ -8,7 +8,7 @@ import RandomSelectModal from './RandomSelectModal'
 import Navbar from './Navbar'
 import UpNextBanner from './UpNextBanner'
 
-function Dashboard() {
+function Dashboard({ onLogout }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [config, setConfig] = useState({})
@@ -162,6 +162,7 @@ function Dashboard() {
         onAddClick={() => setShowModal(true)}
         onFilterClick={() => setShowFilters(!showFilters)}
         onRandomClick={() => setShowRandomModal(true)}
+        onLogout={onLogout}
       />
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
         {showFilters && (

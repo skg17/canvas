@@ -14,6 +14,7 @@ services:
       - TMDB_API_KEY=${TMDB_API_KEY}
       - DATABASE_URL=sqlite:////data/watchlist.db
       - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
+      - LOGIN_PASSWORD=${LOGIN_PASSWORD}
     volumes:
       - ./data:/data:rw
       # Mount app directory for hot-reload development

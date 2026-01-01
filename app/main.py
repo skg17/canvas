@@ -19,6 +19,7 @@ from app.models import WatchlistItem
 from app.tmdb_client import TMDbClient
 from app.jellyfin_client import JellyfinClient
 from app.sync import run_periodic_sync
+from app.auth import create_access_token, verify_password, get_current_user
 
 
 @asynccontextmanager
@@ -157,12 +158,45 @@ class SearchResult(BaseModel):
     year: Optional[str]
 
 
+class LoginRequest(BaseModel):
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+# Authentication endpoints
+@app.post("/api/auth/login", response_model=LoginResponse)
+async def login(login_data: LoginRequest):
+    """Authenticate with password."""
+    if not verify_password(login_data.password):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid password"
+        )
+    
+    access_token = create_access_token()
+    return LoginResponse(access_token=access_token)
+
+@app.post("/api/auth/logout")
+async def logout():
+    """Logout (client should discard token)."""
+    return {"message": "Logged out successfully"}
+
+@app.get("/api/auth/check")
+async def check_auth(authenticated: bool = Depends(get_current_user)):
+    """Check if user is authenticated."""
+    return {"authenticated": True}
+
+
 @app.get("/api/watchlist")
 async def get_watchlist(
     media_type: Optional[str] = None,
     watched: Optional[str] = None,
     availability: Optional[str] = None,
     search: Optional[str] = None,
+    authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get watchlist items with optional filters."""
@@ -251,6 +285,7 @@ async def search_media(
 @app.post("/api/watchlist")
 async def add_to_watchlist(
     item: AddItemRequest,
+    authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Add item to watchlist."""
@@ -320,6 +355,7 @@ async def add_to_watchlist(
 @app.delete("/api/watchlist/{item_id}")
 async def remove_from_watchlist(
     item_id: int,
+    authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Remove item from watchlist."""
@@ -336,6 +372,7 @@ async def remove_from_watchlist(
 @app.post("/api/watchlist/{item_id}/toggle-watched")
 async def toggle_watched_status(
     item_id: int,
+    authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Toggle watched status for an item."""
@@ -386,6 +423,7 @@ async def add_to_queue(
 @app.post("/api/watchlist/{item_id}/remove-from-queue")
 async def remove_from_queue(
     item_id: int,
+    authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Remove item from queue."""
@@ -415,6 +453,7 @@ async def remove_from_queue(
 @app.post("/api/watchlist/reorder-queue")
 async def reorder_queue(
     request: ReorderQueueRequest,
+    authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Reorder queue items."""
@@ -433,6 +472,7 @@ async def reorder_queue(
 
 @app.get("/api/watchlist/queue")
 async def get_queue(
+    authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get all items in queue, ordered by queue_order."""
