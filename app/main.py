@@ -50,8 +50,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_title,
-    lifespan=lifespan,
-    root_path=""  # Set to empty string - let reverse proxy handle paths
+    lifespan=lifespan
 )
 
 # Trust proxy headers (for reverse proxy)
@@ -72,21 +71,13 @@ app.add_middleware(
 )
 
 # Serve static files (for built React app in production)
-# Vite builds assets to /assets/, so mount the assets directory
-try:
+# IMPORTANT: Mount static files BEFORE the catch-all route
+import os
+if os.path.exists("frontend/dist/assets"):
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
-except Exception:
-    pass  # Directory might not exist in dev mode
 
 # Serve other static files from dist root (like vite.svg, favicon, etc.)
-try:
-    # Mount individual files that might be in dist root
-    import os
-    if os.path.exists("frontend/dist"):
-        # We'll serve these via the catch-all route instead
-        pass
-except Exception:
-    pass
+# These will be handled by the catch-all route
 
 
 # Pydantic models for request/response
@@ -349,26 +340,44 @@ async def get_config():
 
 
 # Serve React app for all non-API routes (for production)
+# This must be LAST to catch all remaining routes
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str, request: Request):
     """Serve React app for all non-API routes."""
-    # Block API routes
+    # Block API routes (shouldn't reach here, but safety check)
     if full_path.startswith("api"):
+        raise HTTPException(status_code=404)
+    
+    # Don't serve assets here - they're handled by the /assets mount above
+    if full_path.startswith("assets"):
         raise HTTPException(status_code=404)
     
     # Normalize path (remove leading slash if present)
     path = full_path.lstrip("/")
     
-    # Serve static assets if they exist
+    # Serve other static files from dist root if they exist (like vite.svg, favicon, etc.)
     if path:
         dist_path = os.path.join("frontend/dist", path)
         if os.path.exists(dist_path) and os.path.isfile(dist_path):
-            return FileResponse(dist_path)
+            # Determine content type
+            if path.endswith(".svg"):
+                return FileResponse(dist_path, media_type="image/svg+xml")
+            elif path.endswith(".ico"):
+                return FileResponse(dist_path, media_type="image/x-icon")
+            elif path.endswith(".png"):
+                return FileResponse(dist_path, media_type="image/png")
+            else:
+                return FileResponse(dist_path)
     
     # For all other routes (including root), serve index.html (SPA routing)
     react_index = "frontend/dist/index.html"
     if os.path.exists(react_index):
-        return FileResponse(react_index, media_type="text/html")
+        response = FileResponse(react_index, media_type="text/html")
+        # Add headers to prevent caching of index.html (so updates are reflected)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     
     # Fallback for development
     return {"message": "React app not built. Run 'npm run build' in the frontend directory."}
