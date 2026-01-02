@@ -5,11 +5,12 @@ function Navbar({ onAddClick, onFilterClick, onRandomClick, onLogout }) {
   return (
     <nav className="sticky top-0 z-50 bg-[#17131D] border-b border-white/5">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-accent text-lg sm:text-xl">⊞</span>
-          <h1 className="text-lg sm:text-xl font-medium text-text-primary">
-            canvas
-          </h1>
+        <div className="flex items-center">
+          <img 
+            src="/logo.png" 
+            alt="canvas" 
+            className="h-8 sm:h-10 w-auto"
+          />
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           {onRandomClick && (
