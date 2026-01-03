@@ -44,7 +44,6 @@ function Navbar({ onAddClick, onFilterClick, onRandomClick, onLogout }) {
               aria-label="Logout"
             >
               <HiArrowRightOnRectangle className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
             </button>
           )}
         </div>
