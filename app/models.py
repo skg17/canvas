@@ -21,6 +21,9 @@ class WatchlistItem(Base):
     queue_order = Column(Integer, nullable=True, index=True)  # Position in queue (null = not in queue)
     jellyfin_item_id = Column(String, nullable=True)  # Store Jellyfin item ID for direct linking
     genres = Column(String, nullable=True)  # Comma-separated genre IDs from TMDb
+    runtime = Column(Integer, nullable=True)  # Runtime in minutes
+    rating = Column(String, nullable=True)  # TMDb rating (vote_average)
+    language = Column(String, nullable=True)  # Original language code (e.g., "en", "es")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

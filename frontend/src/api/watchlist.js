@@ -69,3 +69,8 @@ export const getQueue = async () => {
   return response.data
 }
 
+export const getMediaDetails = async (tmdbId, mediaType) => {
+  const response = await api.get(`/media/${tmdbId}/details?media_type=${mediaType}`)
+  return response.data
+}
+

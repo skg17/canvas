@@ -8,6 +8,7 @@ import RandomSelectModal from './RandomSelectModal'
 import Navbar from './Navbar'
 import UpNextBanner from './UpNextBanner'
 import GenreDropdown from './GenreDropdown'
+import MediaDetailModal from './MediaDetailModal'
 
 function Dashboard({ onLogout }) {
   const [items, setItems] = useState([])
@@ -24,6 +25,8 @@ function Dashboard({ onLogout }) {
   const [showModal, setShowModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showRandomModal, setShowRandomModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [selectedItem, setSelectedItem] = useState(null)
   const [queueUpdateTrigger, setQueueUpdateTrigger] = useState(0)
   const [selectedRandomItem, setSelectedRandomItem] = useState(null)
   const [randomSelectedItem, setRandomSelectedItem] = useState(null)
@@ -234,6 +237,10 @@ function Dashboard({ onLogout }) {
                     onRemove={handleRemoveItem}
                     onToggleWatched={handleToggleWatched}
                     onAddToQueue={handleAddToQueue}
+                    onClick={() => {
+                      setSelectedItem(item)
+                      setShowDetailModal(true)
+                    }}
                   />
                 </div>
               ))}
@@ -271,6 +278,21 @@ function Dashboard({ onLogout }) {
         selectedItem={randomSelectedItem}
         onAddToQueue={handleAddToQueue}
         allItems={randomSelectableItems}
+      />
+
+      <MediaDetailModal
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false)
+          setSelectedItem(null)
+        }}
+        item={selectedItem}
+        config={config}
+        onAddToQueue={handleAddToQueue}
+        onWatchNow={() => {
+          setShowDetailModal(false)
+          setSelectedItem(null)
+        }}
       />
     </>
   )

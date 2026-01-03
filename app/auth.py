@@ -15,6 +15,8 @@ security = HTTPBearer(auto_error=False)
 
 def create_access_token() -> str:
     """Create a JWT access token."""
+    if not SECRET_KEY:
+        raise ValueError("JWT SECRET_KEY is not configured. Please set JELLYFIN_API_KEY environment variable.")
     expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
     to_encode = {"exp": expire, "authenticated": True}
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -30,6 +32,9 @@ def verify_token(token: str) -> bool:
 
 def verify_password(password: str) -> bool:
     """Verify password against configured password."""
+    # Check if login password is configured
+    if not settings.login_password:
+        return False
     # Strip whitespace from both passwords for comparison
     return password.strip() == settings.login_password.strip()
 

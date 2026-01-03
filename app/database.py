@@ -88,6 +88,18 @@ def init_db():
                     cursor.execute("ALTER TABLE watchlist_items ADD COLUMN genres TEXT")
                     conn.commit()
                     print("Added 'genres' column to existing database")
+                if 'runtime' not in columns:
+                    cursor.execute("ALTER TABLE watchlist_items ADD COLUMN runtime INTEGER")
+                    conn.commit()
+                    print("Added 'runtime' column to existing database")
+                if 'rating' not in columns:
+                    cursor.execute("ALTER TABLE watchlist_items ADD COLUMN rating TEXT")
+                    conn.commit()
+                    print("Added 'rating' column to existing database")
+                if 'language' not in columns:
+                    cursor.execute("ALTER TABLE watchlist_items ADD COLUMN language TEXT")
+                    conn.commit()
+                    print("Added 'language' column to existing database")
                 conn.close()
         except Exception as e:
             print(f"Warning: Could not add new column to database: {e}")

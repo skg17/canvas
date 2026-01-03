@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { HiEye, HiEyeSlash, HiCheck, HiXMark, HiPlay, HiArrowDownTray, HiEllipsisHorizontal, HiFilm, HiTv } from 'react-icons/hi2'
 
-function MediaCard({ item, config, onRemove, onToggleWatched, onAddToQueue }) {
+function MediaCard({ item, config, onRemove, onToggleWatched, onAddToQueue, onClick }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -31,7 +31,15 @@ function MediaCard({ item, config, onRemove, onToggleWatched, onAddToQueue }) {
   }, [menuOpen])
 
   return (
-    <div className="media-card bg-[#17131D] rounded-[14px] overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]">
+    <div 
+      className="media-card bg-[#17131D] rounded-[14px] overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)] cursor-pointer"
+      onClick={(e) => {
+        // Don't trigger if clicking on buttons or menu
+        if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('.card-menu')) {
+          if (onClick) onClick()
+        }
+      }}
+    >
       <div className="card-poster relative w-full">
         {item.poster_path ? (
           <img

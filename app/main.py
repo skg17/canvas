@@ -21,9 +21,82 @@ from app.jellyfin_client import JellyfinClient
 from app.sync import run_periodic_sync
 from app.auth import create_access_token, verify_password, get_current_user
 
+# Language code to full name mapping (ISO 639-1)
+LANGUAGE_NAMES = {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "de": "German",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "zh": "Chinese",
+    "hi": "Hindi",
+    "ar": "Arabic",
+    "tr": "Turkish",
+    "pl": "Polish",
+    "nl": "Dutch",
+    "sv": "Swedish",
+    "da": "Danish",
+    "no": "Norwegian",
+    "fi": "Finnish",
+    "cs": "Czech",
+    "hu": "Hungarian",
+    "ro": "Romanian",
+    "th": "Thai",
+    "vi": "Vietnamese",
+    "id": "Indonesian",
+    "he": "Hebrew",
+    "uk": "Ukrainian",
+    "el": "Greek",
+    "bg": "Bulgarian",
+    "hr": "Croatian",
+    "sk": "Slovak",
+    "sl": "Slovenian",
+    "sr": "Serbian",
+    "mk": "Macedonian",
+    "sq": "Albanian",
+    "et": "Estonian",
+    "lv": "Latvian",
+    "lt": "Lithuanian",
+    "is": "Icelandic",
+    "ga": "Irish",
+    "mt": "Maltese",
+    "cy": "Welsh",
+    "eu": "Basque",
+    "ca": "Catalan",
+    "gl": "Galician",
+}
+
+def get_language_name(code: Optional[str]) -> Optional[str]:
+    """Convert ISO 639-1 language code to full language name."""
+    if not code:
+        return None
+    code_lower = code.lower().strip()
+    
+    # Check if it's already a full name (case-insensitive)
+    language_names_lower = {name.lower(): name for name in LANGUAGE_NAMES.values()}
+    if code_lower in language_names_lower:
+        return language_names_lower[code_lower]  # Return properly capitalized version
+    
+    # Try to get the full name from the mapping
+    mapped_name = LANGUAGE_NAMES.get(code_lower)
+    if mapped_name:
+        return mapped_name
+    
+    # If not found and it looks like an uppercase full name, try to capitalize it properly
+    if code.isupper() and len(code) > 2:
+        # Might be an uppercase full name like "ENGLISH"
+        return code.capitalize()
+    
+    # Fallback: return uppercase code
+    return code.upper()
+
 
 async def backfill_genres_on_startup():
-    """Backfill genres for existing watchlist items that don't have genres."""
+    """Backfill genres, runtime, rating, and language for existing watchlist items that don't have them."""
     from app.database import SessionLocal
     tmdb = TMDbClient()
     updated_count = 0
@@ -32,47 +105,74 @@ async def backfill_genres_on_startup():
     try:
         db = SessionLocal()
         try:
-            # Get all items without genres
+            # Get all items missing genres, runtime, rating, or language
             items = db.query(WatchlistItem).filter(
-                (WatchlistItem.genres.is_(None)) | (WatchlistItem.genres == "")
+                ((WatchlistItem.genres.is_(None)) | (WatchlistItem.genres == "")) |
+                (WatchlistItem.runtime.is_(None)) |
+                (WatchlistItem.rating.is_(None)) |
+                (WatchlistItem.language.is_(None))
             ).all()
             
             if len(items) == 0:
-                print("No items need genre backfilling")
+                print("No items need details backfilling")
                 return
             
-            print(f"Backfilling genres for {len(items)} items...")
+            print(f"Backfilling details for {len(items)} items...")
             
             for item in items:
                 try:
-                    # Fetch genres from TMDb
+                    # Fetch details from TMDb
                     if item.media_type == "movie":
                         details = await tmdb.get_movie_details(item.tmdb_id)
                     else:
                         details = await tmdb.get_tv_details(item.tmdb_id)
                     
-                    genre_list = details.get("genres", [])
-                    if genre_list:
-                        genre_ids = [str(g.get("id")) for g in genre_list if g.get("id")]
-                        item.genres = ",".join(genre_ids) if genre_ids else None
-                        updated_count += 1
-                        if updated_count % 10 == 0:
-                            print(f"Backfilled genres for {updated_count} items...")
+                    # Update genres
+                    if not item.genres:
+                        genre_list = details.get("genres", [])
+                        if genre_list:
+                            genre_ids = [str(g.get("id")) for g in genre_list if g.get("id")]
+                            item.genres = ",".join(genre_ids) if genre_ids else None
+                    
+                    # Update runtime
+                    if item.runtime is None:
+                        if item.media_type == "movie":
+                            item.runtime = details.get("runtime")
+                        else:
+                            episode_runtimes = details.get("episode_run_time", [])
+                            if episode_runtimes:
+                                item.runtime = episode_runtimes[0]
+                    
+                    # Update rating
+                    if item.rating is None:
+                        vote_average = details.get("vote_average")
+                        if vote_average:
+                            item.rating = str(vote_average)
+                    
+                    # Update language (convert code to full name)
+                    if item.language is None:
+                        original_language = details.get("original_language")
+                        if original_language:
+                            item.language = get_language_name(original_language)
+                    
+                    updated_count += 1
+                    if updated_count % 10 == 0:
+                        print(f"Backfilled details for {updated_count} items...")
                     
                     # Small delay to avoid rate limiting
                     await asyncio.sleep(0.25)
                     
                 except Exception as e:
                     error_count += 1
-                    print(f"Error fetching genres for {item.title} (ID: {item.tmdb_id}): {e}")
+                    print(f"Error fetching details for {item.title} (ID: {item.tmdb_id}): {e}")
                     continue
             
             db.commit()
-            print(f"Genre backfill completed: {updated_count} updated, {error_count} errors, {len(items)} total")
+            print(f"Details backfill completed: {updated_count} updated, {error_count} errors, {len(items)} total")
         finally:
             db.close()
     except Exception as e:
-        print(f"Error in genre backfill: {e}")
+        print(f"Error in details backfill: {e}")
         import traceback
         traceback.print_exc()
     finally:
@@ -170,6 +270,9 @@ class WatchlistItemResponse(BaseModel):
     queue_order: Optional[int] = None
     jellyfin_item_id: Optional[str]
     genres: Optional[str] = None  # Comma-separated genre IDs
+    runtime: Optional[int] = None  # Runtime in minutes
+    rating: Optional[str] = None  # TMDb rating
+    language: Optional[str] = None  # Original language code
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
@@ -188,6 +291,9 @@ class WatchlistItemResponse(BaseModel):
             "is_watched": item.is_watched,
             "jellyfin_item_id": item.jellyfin_item_id,
             "genres": item.genres,
+            "runtime": item.runtime,
+            "rating": item.rating,
+            "language": get_language_name(item.language) if item.language else None,
             "created_at": item.created_at.isoformat() if item.created_at else None,
             "updated_at": item.updated_at.isoformat() if item.updated_at else None,
         }
@@ -232,6 +338,17 @@ class LoginResponse(BaseModel):
 @app.post("/api/auth/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest):
     """Authenticate with password."""
+    # Check if login password is configured
+    if not settings.login_password:
+        print("ERROR: LOGIN_PASSWORD not set in environment variables")
+        raise HTTPException(
+            status_code=500,
+            detail="Login password not configured. Please set LOGIN_PASSWORD environment variable."
+        )
+    
+    # Debug logging (remove in production)
+    print(f"Login attempt - Password length: {len(login_data.password)}, Configured password length: {len(settings.login_password) if settings.login_password else 0}")
+    
     if not verify_password(login_data.password):
         raise HTTPException(
             status_code=401,
@@ -390,8 +507,11 @@ async def add_to_watchlist(
         is_watched = False
         jellyfin_item_id = None
         genres = None
+        runtime = None
+        rating = None
+        language = None
         
-        # Fetch genres from TMDb
+        # Fetch details from TMDb (genres, runtime, rating, language)
         tmdb = TMDbClient()
         try:
             if item.media_type == "movie":
@@ -399,14 +519,35 @@ async def add_to_watchlist(
             else:
                 details = await tmdb.get_tv_details(item.tmdb_id)
             
+            # Extract genres
             genre_list = details.get("genres", [])
             if genre_list:
                 genre_ids = [str(g.get("id")) for g in genre_list if g.get("id")]
                 genres = ",".join(genre_ids) if genre_ids else None
                 print(f"Fetched genres for {item.title}: {genres}")
+            
+            # Extract runtime
+            if item.media_type == "movie":
+                runtime = details.get("runtime")
+            else:
+                # For TV shows, use first episode runtime if available
+                episode_runtimes = details.get("episode_run_time", [])
+                if episode_runtimes:
+                    runtime = episode_runtimes[0]
+            
+            # Extract rating
+            vote_average = details.get("vote_average")
+            if vote_average:
+                rating = str(vote_average)
+            
+            # Extract language (convert code to full name)
+            original_language = details.get("original_language")
+            if original_language:
+                language = get_language_name(original_language)
+                print(f"Fetched language for {item.title}: {language}")
         except Exception as e:
-            print(f"Error fetching genres from TMDb: {e}")
-            # Continue without genres if fetch fails
+            print(f"Error fetching details from TMDb: {e}")
+            # Continue without details if fetch fails
         finally:
             await tmdb.close()
         
@@ -445,7 +586,10 @@ async def add_to_watchlist(
             is_available=is_available,
             is_watched=is_watched,
             jellyfin_item_id=jellyfin_item_id,
-            genres=genres
+            genres=genres,
+            runtime=runtime,
+            rating=rating,
+            language=language
         )
         
         db.add(db_item)
@@ -469,33 +613,60 @@ async def backfill_genres(
     authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Backfill genres for existing watchlist items that don't have genres."""
+    """Backfill genres, runtime, rating, and language for existing watchlist items that don't have them."""
     tmdb = TMDbClient()
     updated_count = 0
     error_count = 0
     
     try:
-        # Get all items without genres
+        # Get all items missing genres, runtime, rating, or language
         items = db.query(WatchlistItem).filter(
-            (WatchlistItem.genres.is_(None)) | (WatchlistItem.genres == "")
+            ((WatchlistItem.genres.is_(None)) | (WatchlistItem.genres == "")) |
+            (WatchlistItem.runtime.is_(None)) |
+            (WatchlistItem.rating.is_(None)) |
+            (WatchlistItem.language.is_(None))
         ).all()
         
-        print(f"Found {len(items)} items to backfill genres for")
+        print(f"Found {len(items)} items to backfill details for")
         
         for item in items:
             try:
-                # Fetch genres from TMDb
+                # Fetch details from TMDb
                 if item.media_type == "movie":
                     details = await tmdb.get_movie_details(item.tmdb_id)
                 else:
                     details = await tmdb.get_tv_details(item.tmdb_id)
                 
-                genre_list = details.get("genres", [])
-                if genre_list:
-                    genre_ids = [str(g.get("id")) for g in genre_list if g.get("id")]
-                    item.genres = ",".join(genre_ids) if genre_ids else None
-                    updated_count += 1
-                    print(f"Updated genres for {item.title}: {item.genres}")
+                # Update genres
+                if not item.genres:
+                    genre_list = details.get("genres", [])
+                    if genre_list:
+                        genre_ids = [str(g.get("id")) for g in genre_list if g.get("id")]
+                        item.genres = ",".join(genre_ids) if genre_ids else None
+                
+                # Update runtime
+                if item.runtime is None:
+                    if item.media_type == "movie":
+                        item.runtime = details.get("runtime")
+                    else:
+                        episode_runtimes = details.get("episode_run_time", [])
+                        if episode_runtimes:
+                            item.runtime = episode_runtimes[0]
+                
+                # Update rating
+                if item.rating is None:
+                    vote_average = details.get("vote_average")
+                    if vote_average:
+                        item.rating = str(vote_average)
+                
+                # Update language (convert code to full name)
+                if item.language is None:
+                    original_language = details.get("original_language")
+                    if original_language:
+                        item.language = get_language_name(original_language)
+                
+                updated_count += 1
+                print(f"Updated details for {item.title}: genres={item.genres}, runtime={item.runtime}, rating={item.rating}, language={item.language}")
                 
                 # Small delay to avoid rate limiting
                 await asyncio.sleep(0.25)
@@ -547,6 +718,94 @@ async def get_genres(
     except Exception as e:
         print(f"Error fetching genres: {e}")
         raise HTTPException(status_code=500, detail=f"Error fetching genres: {str(e)}")
+    finally:
+        await tmdb.close()
+
+
+@app.get("/api/media/{tmdb_id}/details")
+async def get_media_details(
+    tmdb_id: int,
+    media_type: str,
+    authenticated: bool = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get detailed media information. Uses cached data from database if available, otherwise fetches from TMDb."""
+    # First, try to get from database
+    db_item = db.query(WatchlistItem).filter(WatchlistItem.tmdb_id == tmdb_id).first()
+    
+    if db_item and db_item.runtime is not None and db_item.rating is not None:
+        # Use cached data from database
+        genre_names = []
+        if db_item.genres:
+            # Fetch genre names from TMDb using genre IDs
+            tmdb = TMDbClient()
+            try:
+                genre_list = await tmdb.get_genre_list(media_type)
+                genre_id_map = {str(g.get("id")): g.get("name") for g in genre_list}
+                genre_ids = db_item.genres.split(",")
+                genre_names = [genre_id_map.get(gid.strip()) for gid in genre_ids if genre_id_map.get(gid.strip())]
+            except Exception as e:
+                print(f"Error fetching genre names: {e}")
+            finally:
+                await tmdb.close()
+        
+        # Convert language code to full name if needed
+        language_display = db_item.language
+        if language_display:
+            language_display = get_language_name(language_display)
+        
+        return {
+            "title": db_item.title,
+            "overview": db_item.overview or "",
+            "poster_path": db_item.poster_path,
+            "release_date": db_item.release_date or "",
+            "runtime": db_item.runtime,
+            "rating": float(db_item.rating) if db_item.rating else 0,
+            "language": language_display,
+            "genres": genre_names,
+            "media_type": media_type,
+            "tmdb_id": tmdb_id
+        }
+    
+    # Fallback: fetch from TMDb if not in database or missing data
+    tmdb = TMDbClient()
+    try:
+        if media_type == "movie":
+            details = await tmdb.get_movie_details(tmdb_id)
+        else:
+            details = await tmdb.get_tv_details(tmdb_id)
+        
+        # Format response with relevant details
+        runtime = details.get("runtime") if media_type == "movie" else details.get("episode_run_time", [0])[0] if details.get("episode_run_time") else None
+        rating = details.get("vote_average", 0)
+        language = get_language_name(details.get("original_language")) if details.get("original_language") else None
+        
+        # Get genre names from genre IDs
+        genre_ids = details.get("genres", [])
+        genre_names = [g.get("name") for g in genre_ids if g.get("name")]
+        
+        return {
+            "title": details.get("title") or details.get("name", ""),
+            "overview": details.get("overview", ""),
+            "poster_path": tmdb.get_poster_url(details.get("poster_path"), "w500"),
+            "backdrop_path": tmdb.get_poster_url(details.get("backdrop_path"), "original"),
+            "release_date": details.get("release_date") or details.get("first_air_date", ""),
+            "runtime": runtime,
+            "rating": rating,
+            "language": language,
+            "genres": genre_names,
+            "media_type": media_type,
+            "tmdb_id": tmdb_id
+        }
+    except httpx.HTTPStatusError as e:
+        print(f"TMDb API error: {e.response.status_code} - {e.response.text}")
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"TMDb API error: {e.response.status_code}"
+        )
+    except Exception as e:
+        print(f"Error fetching media details: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching media details: {str(e)}")
     finally:
         await tmdb.close()
 
