@@ -88,7 +88,7 @@ function GenreDropdown({ selectedGenres, onGenresChange }) {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`h-9 sm:h-9 px-3 sm:px-4 rounded-lg text-sm font-medium transition-all touch-manipulation flex items-center gap-2 bg-[#1C1824] min-w-[200px] ${
+        className={`h-9 sm:h-9 px-3 sm:px-4 rounded-lg text-sm font-medium transition-all touch-manipulation flex items-center gap-2 bg-[#1C1824] min-w-[140px] max-w-[180px] ${
           selectedGenres.length > 0
             ? 'text-text-primary'
             : 'text-text-secondary hover:text-text-primary'
@@ -103,7 +103,7 @@ function GenreDropdown({ selectedGenres, onGenresChange }) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-64 bg-[#1F1A27] rounded-lg shadow-xl border border-white/5 z-50 max-h-80 flex flex-col">
+        <div className="absolute top-full left-0 mt-2 w-64 bg-[#1F1A27] rounded-lg shadow-xl border border-white/5 z-50 max-h-96 flex flex-col">
           {/* Search input */}
           <div className="p-2 border-b border-white/5">
             <input
@@ -118,19 +118,19 @@ function GenreDropdown({ selectedGenres, onGenresChange }) {
 
           {/* Selected genres chips */}
           {selectedGenreNames.length > 0 && (
-            <div className="p-2 border-b border-white/5 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+            <div className="px-2 pt-2 pb-3 border-b border-white/5 flex flex-wrap gap-1.5 max-h-64 overflow-y-auto">
               {selectedGenreNames.map((name) => {
                 const genre = genres.find(g => g.name === name)
                 return (
                   <span
                     key={genre.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-accent/20 text-accent text-xs rounded"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-[#8B6A9F]/20 text-[#B894D1] text-xs rounded"
                   >
                     {name}
                     <button
                       type="button"
                       onClick={(e) => removeGenre(e, genre.id)}
-                      className="hover:text-accent-hover"
+                      className="hover:text-[#B894D1]"
                     >
                       <HiXMark className="w-3 h-3" />
                     </button>
@@ -155,7 +155,7 @@ function GenreDropdown({ selectedGenres, onGenresChange }) {
                       onClick={() => toggleGenre(genre.id)}
                       className={`w-full text-left px-3 py-2 text-sm rounded transition-colors touch-manipulation ${
                         isSelected
-                          ? 'bg-accent/20 text-accent'
+                          ? 'bg-[#8B6A9F]/20 text-[#B894D1]'
                           : 'text-text-secondary hover:text-text-primary hover:bg-[#17131D]'
                       }`}
                     >
