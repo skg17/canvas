@@ -108,7 +108,7 @@ function MediaDetailModal({ isOpen, onClose, item, config, onAddToQueue, onWatch
       <div className="min-h-full flex items-center justify-center p-4 sm:p-8">
         <div className="bg-[#17131D] rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] max-w-5xl w-full overflow-hidden flex flex-col sm:flex-row">
           {/* Left Column - Poster (40%) */}
-          <div className="relative w-full sm:w-[40%] h-80 sm:h-auto bg-[#1C1824] flex-shrink-0">
+          <div className="relative w-full sm:w-[40%] aspect-[2/3] sm:h-auto bg-[#1C1824] flex-shrink-0">
             {item.poster_path ? (
               <img
                 src={item.poster_path}
@@ -128,7 +128,7 @@ function MediaDetailModal({ isOpen, onClose, item, config, onAddToQueue, onWatch
           </div>
 
           {/* Right Column - Content (60%) */}
-          <div className="flex-1 bg-gradient-to-b from-[#17131D] to-[#1F1A27] p-6 sm:p-8 flex flex-col min-h-[400px] sm:min-h-0">
+          <div className="flex-1 bg-gradient-to-b from-[#17131D] to-[#1F1A27] p-4 sm:p-6 md:p-8 flex flex-col min-h-0">
             {loading ? (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-text-secondary">Loading details...</p>
@@ -216,33 +216,35 @@ function MediaDetailModal({ isOpen, onClose, item, config, onAddToQueue, onWatch
                 )}
 
                 {/* Actions */}
-                <div className="mt-auto flex flex-col sm:flex-row gap-3 pt-4 items-center">
+                <div className="mt-auto flex flex-row gap-2 sm:gap-3 pt-4 items-center">
                   {item.is_available && item.jellyfin_item_id ? (
                     <button
                       onClick={handleWatchNow}
-                      className="flex-1 px-6 py-3 bg-accent text-white rounded-lg font-medium hover:bg-accent-hover active:bg-accent-active transition-all touch-manipulation flex items-center justify-center gap-2"
+                      className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-accent text-white rounded-lg text-sm sm:text-base font-medium hover:bg-accent-hover active:bg-accent-active transition-all touch-manipulation flex items-center justify-center gap-2"
                     >
-                      <HiPlay className="w-5 h-5" />
-                      Watch Now
+                      <HiPlay className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="hidden sm:inline">Watch Now</span>
+                      <span className="sm:hidden">Watch</span>
                     </button>
                   ) : (
                     <a
                       href={`${jellyseerrBaseUrl}/${item.media_type}/${item.tmdb_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 px-6 py-3 bg-[#d97706] text-white rounded-lg font-medium hover:bg-[#d97706]/90 active:bg-[#d97706]/80 transition-all touch-manipulation flex items-center justify-center gap-2 text-center no-underline"
+                      className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#d97706] text-white rounded-lg text-sm sm:text-base font-medium hover:bg-[#d97706]/90 active:bg-[#d97706]/80 transition-all touch-manipulation flex items-center justify-center gap-2 text-center no-underline"
                     >
-                      <HiArrowDownTray className="w-5 h-5" />
-                      Request
+                      <HiArrowDownTray className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="hidden sm:inline">Request</span>
+                      <span className="sm:hidden">Request</span>
                     </a>
                   )}
                   {item.queue_order === null && (
                     <button
                       onClick={handleAddToQueue}
-                      className="w-12 h-12 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation flex items-center justify-center flex-shrink-0"
+                      className="w-10 h-10 sm:w-12 sm:h-12 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation flex items-center justify-center flex-shrink-0"
                       aria-label="Add to Queue"
                     >
-                      <RiPlayListAddLine className="w-5 h-5" />
+                      <RiPlayListAddLine className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   )}
                   {details.tmdb_id && (
@@ -250,10 +252,10 @@ function MediaDetailModal({ isOpen, onClose, item, config, onAddToQueue, onWatch
                       href={`https://www.themoviedb.org/${item.media_type}/${details.tmdb_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-12 h-12 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation flex items-center justify-center text-center no-underline flex-shrink-0"
+                      className="w-10 h-10 sm:w-12 sm:h-12 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation flex items-center justify-center text-center no-underline flex-shrink-0"
                       aria-label="Watch Trailer"
                     >
-                      <HiFilm className="w-5 h-5" />
+                      <HiFilm className="w-4 h-4 sm:w-5 sm:h-5" />
                     </a>
                   )}
                 </div>
