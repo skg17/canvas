@@ -17,7 +17,8 @@ function Dashboard({ onLogout }) {
     watched: 'all',
     availability: 'all',
     search: '',
-    sort: 'date_desc'
+    sort: 'date_desc',
+    genres: []
   })
   const [showModal, setShowModal] = useState(false)
   const [showFilters, setShowFilters] = useState(false)

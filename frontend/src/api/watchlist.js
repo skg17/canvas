@@ -22,6 +22,9 @@ export const getWatchlist = async (filters = {}) => {
   if (filters.sort) {
     params.append('sort', filters.sort)
   }
+  if (filters.genres && filters.genres.length > 0) {
+    params.append('genres', filters.genres.join(','))
+  }
   
   const response = await api.get(`/watchlist?${params.toString()}`)
   return response.data

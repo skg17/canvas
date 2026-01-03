@@ -1,3 +1,5 @@
+import GenreDropdown from './GenreDropdown'
+
 function FilterBar({ filters, onFilterChange }) {
   const FilterBarGroup = ({ options, filterKey }) => {
     return (
@@ -68,6 +70,13 @@ function FilterBar({ filters, onFilterChange }) {
               { value: 'title_asc', label: 'A-Z' },
               { value: 'title_desc', label: 'Z-A' }
             ]}
+          />
+          
+          <div className="hidden sm:block w-px h-9 bg-white/5"></div>
+          
+          <GenreDropdown
+            selectedGenres={filters.genres || []}
+            onGenresChange={(genres) => onFilterChange({ genres })}
           />
         </div>
       </div>

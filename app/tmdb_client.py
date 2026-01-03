@@ -53,6 +53,25 @@ class TMDbClient:
             return None
         return f"https://image.tmdb.org/t/p/{size}{poster_path}"
     
+    async def get_movie_details(self, movie_id: int) -> Dict:
+        """Get movie details including genres."""
+        response = await self.client.get(f"/movie/{movie_id}")
+        response.raise_for_status()
+        return response.json()
+    
+    async def get_tv_details(self, tv_id: int) -> Dict:
+        """Get TV show details including genres."""
+        response = await self.client.get(f"/tv/{tv_id}")
+        response.raise_for_status()
+        return response.json()
+    
+    async def get_genre_list(self, media_type: str = "movie") -> List[Dict]:
+        """Get list of all genres for movies or TV shows."""
+        endpoint = "/genre/movie/list" if media_type == "movie" else "/genre/tv/list"
+        response = await self.client.get(endpoint)
+        response.raise_for_status()
+        return response.json().get("genres", [])
+    
     async def close(self):
         """Close the HTTP client."""
         await self.client.aclose()

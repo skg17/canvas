@@ -84,6 +84,10 @@ def init_db():
                     cursor.execute("ALTER TABLE watchlist_items ADD COLUMN queue_order INTEGER")
                     conn.commit()
                     print("Added 'queue_order' column to existing database")
+                if 'genres' not in columns:
+                    cursor.execute("ALTER TABLE watchlist_items ADD COLUMN genres TEXT")
+                    conn.commit()
+                    print("Added 'genres' column to existing database")
                 conn.close()
         except Exception as e:
             print(f"Warning: Could not add new column to database: {e}")
