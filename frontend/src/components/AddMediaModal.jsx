@@ -63,27 +63,27 @@ function AddMediaModal({ isOpen, onClose, onAdd, onSearch }) {
           </button>
         </div>
         <form onSubmit={handleSearch} className="mb-4">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for movies or TV shows..."
-              required
-              className="flex-1 h-[44px] sm:h-[38px] px-4 border-none rounded-lg text-sm bg-[#1C1824] text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all touch-manipulation"
-            />
+          <div className="flex flex-row gap-2">
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="h-[44px] sm:h-[38px] px-4 border-none rounded-lg text-sm bg-[#1C1824] text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/30 cursor-pointer transition-all touch-manipulation"
+              className="h-[38px] min-h-[38px] px-3 sm:px-4 border-none rounded-lg text-sm bg-[#1C1824] text-text-primary focus:outline-none focus:ring-2 focus:ring-accent/30 cursor-pointer transition-all touch-manipulation leading-normal flex-shrink-0"
             >
               <option value="all">All</option>
               <option value="movie">Movies</option>
               <option value="tv">TV Shows</option>
             </select>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search for media..."
+              required
+              className="flex-1 min-w-0 h-[38px] min-h-[38px] px-3 sm:px-4 border-none rounded-lg text-sm bg-[#1C1824] text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all touch-manipulation leading-normal"
+            />
             <button
               type="submit"
-              className="h-[44px] sm:h-[38px] px-4 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg text-sm font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation"
+              className="h-[38px] min-h-[38px] px-3 sm:px-4 border border-[#8B6A9F]/50 text-[#B894D1] rounded-lg text-sm font-medium hover:bg-[#8B6A9F]/15 hover:border-[#B894D1]/70 active:bg-[#8B6A9F]/20 transition-all touch-manipulation leading-normal flex-shrink-0"
             >
               Search
             </button>
