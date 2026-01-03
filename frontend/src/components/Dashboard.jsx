@@ -7,6 +7,7 @@ import AddMediaModal from './AddMediaModal'
 import RandomSelectModal from './RandomSelectModal'
 import Navbar from './Navbar'
 import UpNextBanner from './UpNextBanner'
+import GenreDropdown from './GenreDropdown'
 
 function Dashboard({ onLogout }) {
   const [items, setItems] = useState([])
@@ -174,25 +175,31 @@ function Dashboard({ onLogout }) {
           />
         )}
         
-        <form 
-          className="mt-6 sm:mt-8 mb-6 sm:mb-8 flex items-center"
-          onSubmit={(e) => {
-            e.preventDefault()
-            handleFilterChange({ search: e.target.search.value })
-          }}
-        >
-          <div className="relative w-full sm:w-64">
-            <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted text-sm pointer-events-none" />
-            <input
-              type="text"
-              name="search"
-              placeholder="Search titles..."
-              value={filters.search || ''}
-              onChange={(e) => handleFilterChange({ search: e.target.value })}
-              className="w-full h-[38px] pl-10 pr-4 bg-[#1C1824] border-none rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all touch-manipulation"
-            />
-          </div>
-        </form>
+        <div className="mt-6 sm:mt-8 mb-6 sm:mb-8 flex items-center gap-3 sm:gap-4">
+          <GenreDropdown
+            selectedGenres={filters.genres || []}
+            onGenresChange={(genres) => handleFilterChange({ genres })}
+          />
+          <form 
+            className="flex-1"
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleFilterChange({ search: e.target.search.value })
+            }}
+          >
+            <div className="relative w-full">
+              <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-muted text-sm pointer-events-none" />
+              <input
+                type="text"
+                name="search"
+                placeholder="Search titles..."
+                value={filters.search || ''}
+                onChange={(e) => handleFilterChange({ search: e.target.value })}
+                className="w-full h-[38px] pl-10 pr-4 bg-[#1C1824] border-none rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all touch-manipulation"
+              />
+            </div>
+          </form>
+        </div>
         
         {config && Object.keys(config).length > 0 && (
           <UpNextBanner 
