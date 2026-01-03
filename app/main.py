@@ -196,10 +196,11 @@ async def get_watchlist(
     watched: Optional[str] = None,
     availability: Optional[str] = None,
     search: Optional[str] = None,
+    sort: Optional[str] = "date_desc",
     authenticated: bool = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get watchlist items with optional filters."""
+    """Get watchlist items with optional filters and sorting."""
     query = db.query(WatchlistItem)
     
     # Apply filters
@@ -219,7 +220,20 @@ async def get_watchlist(
     if search:
         query = query.filter(WatchlistItem.title.ilike(f"%{search}%"))
     
-    items = query.order_by(WatchlistItem.created_at.desc()).all()
+    # Apply sorting
+    if sort == "date_asc":
+        query = query.order_by(WatchlistItem.created_at.asc())
+    elif sort == "date_desc":
+        query = query.order_by(WatchlistItem.created_at.desc())
+    elif sort == "title_asc":
+        query = query.order_by(WatchlistItem.title.asc())
+    elif sort == "title_desc":
+        query = query.order_by(WatchlistItem.title.desc())
+    else:
+        # Default to newest first
+        query = query.order_by(WatchlistItem.created_at.desc())
+    
+    items = query.all()
     
     return {
         "items": [WatchlistItemResponse.from_orm_item(item).model_dump() for item in items],

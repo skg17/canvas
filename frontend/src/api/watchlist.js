@@ -19,6 +19,9 @@ export const getWatchlist = async (filters = {}) => {
   if (filters.search) {
     params.append('search', filters.search)
   }
+  if (filters.sort) {
+    params.append('sort', filters.sort)
+  }
   
   const response = await api.get(`/watchlist?${params.toString()}`)
   return response.data

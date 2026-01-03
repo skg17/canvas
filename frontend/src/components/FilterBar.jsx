@@ -57,6 +57,18 @@ function FilterBar({ filters, onFilterChange }) {
               { value: 'missing', label: 'Missing' }
             ]}
           />
+          
+          <div className="hidden sm:block w-px h-9 bg-white/5"></div>
+          
+          <FilterBarGroup
+            filterKey="sort"
+            options={[
+              { value: 'date_desc', label: 'Newest' },
+              { value: 'date_asc', label: 'Oldest' },
+              { value: 'title_asc', label: 'A-Z' },
+              { value: 'title_desc', label: 'Z-A' }
+            ]}
+          />
         </div>
       </div>
     </div>
